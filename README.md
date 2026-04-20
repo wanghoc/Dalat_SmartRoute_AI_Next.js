@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dalat SmartRoute (Next.js)
 
-## Getting Started
+Next.js App Router migration of Dalat SmartRoute with Prisma + Supabase.
 
-First, run the development server:
+## Local setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+1. Create `.env.local` and set values:
+
+```bash
+# Runtime URL (Supabase pooler)
+DATABASE_URL="postgresql://postgres.<PROJECT_REF>:<URL_ENCODED_PASSWORD>@aws-<region>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1&sslmode=require"
+
+# Direct URL (optional but recommended for migrate; can be same as DATABASE_URL when direct host is unavailable)
+DIRECT_URL="postgresql://postgres:<URL_ENCODED_PASSWORD>@db.<PROJECT_REF>.supabase.co:5432/postgres?sslmode=require"
+
+JWT_SECRET="replace_with_strong_secret"
+OPENWEATHER_API_KEY="..."
+GEMINI_API_KEY="..."
+GEMINI_MODEL="gemini-flash-latest"
+NEXT_PUBLIC_API_URL="/api"
+```
+
+1. Provision database + seed sample data:
+
+```bash
+npm run db:setup
+```
+
+This command uses a resilient flow:
+- tries `prisma migrate deploy`
+- falls back to `prisma db push` on connection/migration-engine issues
+- runs seed script
+
+1. Start dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deployment (Vercel)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+For full step-by-step deployment with Supabase setup, see [DEPLOY_SUPABASE_VERCEL.md](DEPLOY_SUPABASE_VERCEL.md).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Add these environment variables in Vercel Project Settings:
+- `DATABASE_URL`
+- `DIRECT_URL`
+- `JWT_SECRET`
+- `OPENWEATHER_API_KEY`
+- `GEMINI_API_KEY`
+- `GEMINI_MODEL`
+- `NEXT_PUBLIC_API_URL`
 
-## Learn More
+1. Use default Vercel build (or `vercel-build` script in this repo).
 
-To learn more about Next.js, take a look at the following resources:
+The `vercel-build` script runs:
+- `npm run db:provision`
+- `npm run build`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+So schema provisioning is attempted automatically during deploy.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
+- `npm run build`: Prisma generate + Next build
+- `npm run db:provision`: migrate deploy with db push fallback
+- `npm run db:seed`: reset and seed demo data
+- `npm run db:setup`: provision + seed
+- `npm run vercel-build`: provision + build
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Troubleshooting
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `P1013 empty host in database URL`:
+	Password likely contains special characters and is not URL encoded.
+- `P1001 Can't reach database server`:
+	Check Supabase project is active and verify host/port in URL.
+- If direct host (`db.<ref>.supabase.co:5432`) fails in your network:
+	Set `DIRECT_URL` temporarily equal to `DATABASE_URL`.

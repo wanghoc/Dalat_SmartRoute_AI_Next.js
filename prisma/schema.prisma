@@ -1,11 +1,12 @@
 // =============================================================================
 // Prisma Schema for Dalat SmartRoute AI
-// Database: SQLite (for simplicity, no server setup needed)
+// Database: PostgreSQL (Supabase)
 // =============================================================================
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -79,7 +80,7 @@ model Review {
   rating    Int      // 1-5 stars
   language  String   @default("en")
   helpful   Int      @default(0)
-  tags      String   @default("[]") // JSON array stored as string (SQLite limitation)
+  tags      String   @default("[]") // Keep JSON array as string for compatibility
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
   placeId   Int
