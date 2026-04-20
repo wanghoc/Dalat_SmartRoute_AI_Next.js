@@ -82,3 +82,5 @@ So schema provisioning is attempted automatically during deploy.
 	Check Supabase project is active and verify host/port in URL.
 - If direct host (`db.<ref>.supabase.co:5432`) fails in your network:
 	Set `DIRECT_URL` temporarily equal to `DATABASE_URL`.
+- If build log shows `file:./dev.db`:
+	Your Vercel `DATABASE_URL` is misconfigured (SQLite value). Replace it with Supabase Postgres URI.

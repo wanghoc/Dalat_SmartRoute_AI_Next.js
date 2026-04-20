@@ -126,6 +126,15 @@ Fix:
 3. Try `DIRECT_URL=DATABASE_URL` temporarily.
 4. Confirm Vercel env values are updated in the correct environment (Production/Preview) and redeploy.
 
+### Log shows `Datasource ... at file:./dev.db`
+Cause:
+- Vercel `DATABASE_URL` is still set to a SQLite/file value (or inherited from old config).
+
+Fix:
+1. In Vercel Project Settings -> Environment Variables, update `DATABASE_URL` to Supabase Postgres URI.
+2. Ensure protocol starts with `postgresql://` (or `postgres://`) and not `file:`.
+3. Re-deploy after saving env changes.
+
 ### Dev error: another next dev server is already running
 Fix:
 

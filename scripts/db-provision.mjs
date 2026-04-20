@@ -9,6 +9,38 @@ if (existsSync('.env.local')) {
   loadDotenv({ path: '.env.local', override: true });
 }
 
+function normalizeConnectionString(value) {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1);
+  }
+
+  return trimmed;
+}
+
+function isLikelySqliteUrl(value) {
+  if (!value) {
+    return false;
+  }
+
+  return value.startsWith('file:') || value.startsWith('sqlite:');
+}
+
+function hasSupportedPostgresProtocol(value) {
+  if (!value) {
+    return false;
+  }
+
+  return value.startsWith('postgres://') || value.startsWith('postgresql://');
+}
+
 function run(command, args, label, timeoutMs = 0, env = process.env) {
   console.log(`\n[db-provision] ${label}`);
   const result = spawnSync(command, args, {
@@ -45,20 +77,42 @@ function getHost(connectionString) {
   }
 
   try {
-    return new URL(connectionString).host;
+    const host = new URL(connectionString).host;
+    return host || '(empty-host)';
   } catch {
     return '(invalid-url)';
   }
 }
 
+process.env.DATABASE_URL = normalizeConnectionString(process.env.DATABASE_URL);
+process.env.DIRECT_URL = normalizeConnectionString(process.env.DIRECT_URL);
+
 if (!process.env.DATABASE_URL) {
   console.error('[db-provision] DATABASE_URL is missing.');
+  console.error('[db-provision] Set DATABASE_URL in Vercel Project Settings -> Environment Variables.');
+  process.exit(1);
+}
+
+if (isLikelySqliteUrl(process.env.DATABASE_URL)) {
+  console.error('[db-provision] DATABASE_URL is using SQLite/file protocol, but schema expects PostgreSQL.');
+  console.error('[db-provision] Current DATABASE_URL starts with file:/sqlite:.');
+  console.error('[db-provision] Update Vercel DATABASE_URL to your Supabase Postgres URI (pooler on port 6543).');
+  process.exit(1);
+}
+
+if (!hasSupportedPostgresProtocol(process.env.DATABASE_URL)) {
+  console.error('[db-provision] DATABASE_URL must start with postgres:// or postgresql://');
   process.exit(1);
 }
 
 if (!process.env.DIRECT_URL) {
   process.env.DIRECT_URL = process.env.DATABASE_URL;
   console.warn('[db-provision] DIRECT_URL is missing. Defaulting DIRECT_URL to DATABASE_URL.');
+}
+
+if (isLikelySqliteUrl(process.env.DIRECT_URL)) {
+  console.warn('[db-provision] DIRECT_URL is SQLite/file URL. Replacing DIRECT_URL with DATABASE_URL.');
+  process.env.DIRECT_URL = process.env.DATABASE_URL;
 }
 
 const baseEnv = { ...process.env };
