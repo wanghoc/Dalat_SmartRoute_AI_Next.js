@@ -76,6 +76,15 @@ In Vercel project settings, add Environment Variables for Production (and Previe
 - GEMINI_MODEL
 - NEXT_PUBLIC_API_URL
 
+Important:
+- Vercel does not read your local `.env.local` file.
+- You must set these values in Vercel Project Settings -> Environment Variables.
+
+Recommended mapping for Supabase:
+- `DATABASE_URL`: use Supabase pooler URL (`aws-<x>-<region>.pooler.supabase.com:6543`)
+- `DIRECT_URL`: use Supabase direct URL (`db.<project-ref>.supabase.co:5432`) when available
+- If direct URL cannot connect from Vercel, set `DIRECT_URL` equal to `DATABASE_URL`
+
 This repository already contains `vercel.json` with:
 - `buildCommand`: `npm run vercel-build`
 
@@ -115,6 +124,7 @@ Fix:
 1. Re-copy host from Supabase.
 2. Test network to host/port.
 3. Try `DIRECT_URL=DATABASE_URL` temporarily.
+4. Confirm Vercel env values are updated in the correct environment (Production/Preview) and redeploy.
 
 ### Dev error: another next dev server is already running
 Fix:

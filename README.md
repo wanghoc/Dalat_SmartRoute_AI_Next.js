@@ -47,6 +47,8 @@ npm run dev
 
 For full step-by-step deployment with Supabase setup, see [DEPLOY_SUPABASE_VERCEL.md](DEPLOY_SUPABASE_VERCEL.md).
 
+Note: `.env.local` on your machine is not used by Vercel builds. Configure environment variables in Vercel Project Settings.
+
 1. Add these environment variables in Vercel Project Settings:
 - `DATABASE_URL`
 - `DIRECT_URL`
