@@ -61,15 +61,17 @@ Note: `.env.local` on your machine is not used by Vercel builds. Configure envir
 1. Use default Vercel build (or `vercel-build` script in this repo).
 
 The `vercel-build` script runs:
-- `npm run db:provision`
+- `npm run db:provision:soft`
 - `npm run build`
 
-So schema provisioning is attempted automatically during deploy.
+So schema provisioning is attempted automatically during deploy in best-effort mode.
+For first-time setup, run `npm run db:setup` locally to guarantee schema/data exist.
 
 ## Scripts
 
 - `npm run build`: Prisma generate + Next build
 - `npm run db:provision`: migrate deploy with db push fallback
+- `npm run db:provision:soft`: same flow but does not block build on connection timeouts
 - `npm run db:seed`: reset and seed demo data
 - `npm run db:setup`: provision + seed
 - `npm run vercel-build`: provision + build

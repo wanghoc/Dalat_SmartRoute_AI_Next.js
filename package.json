@@ -6,13 +6,14 @@
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
-    "vercel-build": "npm run db:provision && npm run build",
+    "vercel-build": "npm run db:provision:soft && npm run build",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "dotenv -e .env.local -- prisma generate",
     "db:push": "dotenv -e .env.local -- prisma db push",
     "db:migrate:deploy": "dotenv -e .env.local -- prisma migrate deploy",
     "db:provision": "node scripts/db-provision.mjs",
+    "db:provision:soft": "node scripts/db-provision.mjs --soft",
     "db:seed": "dotenv -e .env.local -- node prisma/seed.js",
     "db:setup": "npm run db:provision && npm run db:seed"
   },

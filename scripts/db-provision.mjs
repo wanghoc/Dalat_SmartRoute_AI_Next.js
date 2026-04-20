@@ -2,6 +2,9 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { config as loadDotenv } from 'dotenv';
 
+const cliArgs = new Set(process.argv.slice(2));
+const isSoftMode = cliArgs.has('--soft') || process.env.DB_PROVISION_SOFT === '1';
+
 if (existsSync('.env')) {
   loadDotenv({ path: '.env' });
 }
@@ -39,6 +42,20 @@ function hasSupportedPostgresProtocol(value) {
   }
 
   return value.startsWith('postgres://') || value.startsWith('postgresql://');
+}
+
+function maybeExitSoft(message, context = '') {
+  if (!isSoftMode) {
+    return false;
+  }
+
+  if (!context || isFallbackEligible(context)) {
+    console.warn(`[db-provision] ${message}`);
+    console.warn('[db-provision] Soft mode enabled. Continuing build without blocking deployment.');
+    process.exit(0);
+  }
+
+  return false;
 }
 
 function run(command, args, label, timeoutMs = 0, env = process.env) {
@@ -133,6 +150,7 @@ if (migrate.code === 0) {
 }
 
 if (!migrate.timedOut && !isFallbackEligible(migrate.output)) {
+  maybeExitSoft('Migration failed in soft mode; skipping DB provision.', migrate.output);
   console.error('[db-provision] Migration failed with a non-recoverable error.');
   process.exit(migrate.code);
 }
@@ -153,6 +171,7 @@ if (baseEnv.DIRECT_URL && baseEnv.DIRECT_URL !== baseEnv.DATABASE_URL) {
   }
 
   if (!migrateWithPooled.timedOut && !isFallbackEligible(migrateWithPooled.output)) {
+    maybeExitSoft('Retry migration failed in soft mode; skipping DB provision.', migrateWithPooled.output);
     console.error('[db-provision] Retry migration failed with a non-recoverable error.');
     process.exit(migrateWithPooled.code);
   }
@@ -173,6 +192,12 @@ const push = run(
 );
 
 if (push.code !== 0) {
+  maybeExitSoft('DB provision could not reach database during build.', `${push.output}\n${migrate.output}`);
+
+  if (push.timedOut) {
+    maybeExitSoft('DB provision timed out during build.', 'P1001 timeout');
+  }
+
   console.error('[db-provision] Fallback db push failed.');
   process.exit(push.code);
 }

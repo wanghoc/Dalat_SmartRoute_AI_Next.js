@@ -89,8 +89,12 @@ This repository already contains `vercel.json` with:
 - `buildCommand`: `npm run vercel-build`
 
 And `vercel-build` does:
-1. `npm run db:provision`
+1. `npm run db:provision:soft`
 2. `npm run build`
+
+Soft mode behavior:
+- If DB is temporarily unreachable during Vercel build, deployment will continue.
+- You should run `npm run db:setup` from your machine once to guarantee schema/data exist.
 
 ## 6) First Production Seed
 
