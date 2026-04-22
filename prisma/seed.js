@@ -658,16 +658,29 @@ async function main() {
     }
     console.log(`✓ Created ${places.length} places`);
 
-    // Create demo user (with generic avatar - null means use default icon)
+    // Create demo visitor user (with generic avatar - null means use default icon)
     const demoUser = await prisma.user.create({
         data: {
             email: 'demo@dalat.vibe',
             username: 'Traveler',
             passwordHash: await bcrypt.hash('password123', 10),
-            avatar: null  // Use generic user icon
+            avatar: null,  // Use generic user icon
+            role: 'VISITOR'
         }
     });
-    console.log('✓ Created demo user');
+    console.log('✓ Created demo visitor user');
+
+    // Create demo admin user
+    await prisma.user.create({
+        data: {
+            email: 'admin@dalat.vibe',
+            username: 'Admin',
+            passwordHash: await bcrypt.hash('admin123', 10),
+            avatar: null,
+            role: 'ADMIN'
+        }
+    });
+    console.log('✓ Created demo admin user');
 
     // Get place map
     const placeMap = {};

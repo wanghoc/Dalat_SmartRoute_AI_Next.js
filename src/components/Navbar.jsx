@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Menu, X, User, LogOut, Check, LogIn, Globe } from 'lucide-react';
+import { Menu, X, User, LogOut, Check, Globe, Shield } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import LoginModal from './LoginModal';
@@ -59,6 +59,14 @@ const AvatarDropdown = ({ user, onLogout }) => {
                         <p className="text-xs text-white/50 truncate">{user.email}</p>
                     </div>
                     <div className="py-1">
+                        {user.role === 'ADMIN' && (
+                            <button
+                                onClick={() => { setIsOpen(false); navigate('/admin'); }}
+                                className="w-full px-4 py-2.5 flex items-center gap-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                            >
+                                <Shield className="w-4 h-4" /> Admin
+                            </button>
+                        )}
                         <button
                             onClick={() => { setIsOpen(false); navigate('/profile'); }}
                             className="w-full px-4 py-2.5 flex items-center gap-3 text-sm text-white/80 hover:bg-white/10 hover:text-white transition-colors"
@@ -101,6 +109,10 @@ const Navbar = () => {
         { key: 'nav.local', label: t('nav.local') || 'Dining', to: "/local-eats" },
         { key: 'nav.community', label: t('nav.community') || 'Community', to: "/community" },
     ];
+
+    if (isAuthenticated && user?.role === 'ADMIN') {
+        navLinks.push({ key: 'nav.admin', label: 'Admin', to: '/admin' });
+    }
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 20);
@@ -325,19 +337,45 @@ const Navbar = () => {
                     {/* User Section */}
                     {isAuthenticated && user ? (
                         <div className="bg-white/5 rounded-2xl p-4 space-y-4">
-                            <div className="flex items-center gap-4">
+                            <Link
+                                to="/profile"
+                                onClick={() => setMenuOpen(false)}
+                                className="flex items-center gap-4 rounded-xl hover:bg-white/5 transition-colors p-2 -m-2"
+                                aria-label={t('auth.profile') || 'Profile'}
+                            >
                                 <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden">
                                     {user.avatar ? (
-                                        <img src={user.avatar} className="w-full h-full object-cover" alt={user.name} />
+                                        <img src={user.avatar} className="w-full h-full object-cover" alt={user.name || user.username} />
                                     ) : (
                                         <User className="w-6 h-6 text-white" />
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-white truncate">{user.name}</p>
+                                    <p className="font-semibold text-white truncate">{user.name || user.username}</p>
                                     <p className="text-sm text-white/50 truncate">{user.email}</p>
                                 </div>
-                            </div>
+                            </Link>
+
+                            {user.role === 'ADMIN' && (
+                                <Link
+                                    to="/admin"
+                                    onClick={() => setMenuOpen(false)}
+                                    className="w-full py-3 rounded-xl bg-emerald-600/80 hover:bg-emerald-500 text-white flex items-center justify-center gap-2 transition-colors"
+                                >
+                                    <Shield className="w-4 h-4" />
+                                    <span>Admin Dashboard</span>
+                                </Link>
+                            )}
+
+                            <Link
+                                to="/profile"
+                                onClick={() => setMenuOpen(false)}
+                                className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white flex items-center justify-center gap-2 transition-colors"
+                            >
+                                <User className="w-4 h-4" />
+                                <span>{t('auth.profile') || 'Profile'}</span>
+                            </Link>
+
                             <button
                                 onClick={() => { logout(); setMenuOpen(false); }}
                                 className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white flex items-center justify-center gap-2 transition-colors"

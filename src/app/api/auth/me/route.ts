@@ -25,7 +25,9 @@ export async function GET(request: Request) {
       id: user.id,
       email: user.email,
       username: user.username,
+      name: user.username,
       avatar: user.avatar,
+      role: user.role,
     });
   } catch (error) {
     return handleRouteError(error, 'Authentication failed');

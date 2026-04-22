@@ -27,6 +27,10 @@ import { API_BASE } from '../utils/api';
 const ITEMS_PER_PAGE = 12; // Adjusted for grid layout
 
 const staticReviews = [...reviewsPart1, ...reviewsPart2];
+const staticReviewsWithKeys = staticReviews.map((review) => ({
+    ...review,
+    renderKey: `mock-${review.id}-${review.placeId || 'na'}`
+}));
 
 const FILTERS = {
     ALL: 'all',
@@ -68,6 +72,7 @@ const parseTags = (rawTags) => {
 
 const mapDbReviewToUi = (review) => ({
     id: review.id,
+    renderKey: `db-${review.id}`,
     title: review.title,
     content: review.content,
     rating: review.rating,
@@ -77,7 +82,9 @@ const mapDbReviewToUi = (review) => ({
     language: review.language || 'en',
     tags: parseTags(review.tags),
     helpful: review.helpful || 0,
-    isCustom: true
+    isCustom: true,
+    userId: review.user?.id,
+    placeId: review.placeId
 });
 
 // =============================================================================
@@ -332,7 +339,7 @@ const Community = () => {
 
     // Merge reviews
     const allReviews = useMemo(() => {
-        return [...customReviews, ...staticReviews];
+        return [...customReviews, ...staticReviewsWithKeys];
     }, [customReviews]);
 
     // Counts
@@ -496,7 +503,7 @@ const Community = () => {
                     >
                         <AnimatePresence mode="popLayout">
                             {currentReviews.map((review) => (
-                                <ReviewCard key={review.id} review={review} />
+                                <ReviewCard key={review.renderKey || review.id} review={review} />
                             ))}
                         </AnimatePresence>
                     </motion.div>

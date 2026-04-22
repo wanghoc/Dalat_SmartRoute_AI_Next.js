@@ -14,6 +14,8 @@ import {
     Loader2
 } from 'lucide-react';
 import { API_BASE } from '../utils/api';
+import { useAuth } from '../context/AuthContext';
+import LoginModal from '../components/LoginModal';
 
 // =============================================================================
 // COMPONENT: DetailPage
@@ -22,10 +24,13 @@ import { API_BASE } from '../utils/api';
 const DetailPage = () => {
     const { id } = useParams();
     const { t, i18n } = useTranslation();
+    const { token, isAuthenticated } = useAuth();
     const [place, setPlace] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isSaved, setIsSaved] = useState(false);
+    const [isSavingFavorite, setIsSavingFavorite] = useState(false);
+    const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
 
     const isVietnamese = i18n.language === 'vi';
@@ -52,6 +57,84 @@ const DetailPage = () => {
         fetchPlace();
         window.scrollTo(0, 0);
     }, [id]);
+
+    useEffect(() => {
+        const fetchFavoriteState = async () => {
+            if (!isAuthenticated || !token) {
+                setIsSaved(false);
+                return;
+            }
+
+            const placeId = Number.parseInt(String(id), 10);
+            if (!Number.isFinite(placeId)) {
+                setIsSaved(false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/favorites`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                const favorites = Array.isArray(data.favorites) ? data.favorites : [];
+                const hasSaved = favorites.some(
+                    (favorite) => favorite.placeId === placeId || favorite.place?.id === placeId,
+                );
+
+                setIsSaved(hasSaved);
+            } catch (e) {
+                console.error('Failed to fetch favorites:', e);
+            }
+        };
+
+        fetchFavoriteState();
+    }, [id, isAuthenticated, token]);
+
+    const handleToggleSaved = async () => {
+        if (!isAuthenticated || !token) {
+            setLoginModalOpen(true);
+            return;
+        }
+
+        const placeId = Number.parseInt(String(id), 10);
+        if (!Number.isFinite(placeId)) {
+            return;
+        }
+
+        setIsSavingFavorite(true);
+
+        try {
+            const response = await fetch(
+                isSaved ? `${API_BASE}/favorites?placeId=${placeId}` : `${API_BASE}/favorites`,
+                {
+                    method: isSaved ? 'DELETE' : 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: isSaved ? undefined : JSON.stringify({ placeId }),
+                },
+            );
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Failed to update saved place');
+            }
+
+            setIsSaved((prev) => !prev);
+        } catch (e) {
+            alert(e.message || 'Failed to update saved place');
+        } finally {
+            setIsSavingFavorite(false);
+        }
+    };
 
     // Render star rating
     const renderStars = (rating) => {
@@ -117,9 +200,13 @@ const DetailPage = () => {
     const title = isVietnamese && place.titleVi ? place.titleVi : place.title;
     const description = isVietnamese && place.descriptionVi ? place.descriptionVi : place.description;
     const location = isVietnamese && place.locationVi ? place.locationVi : place.location;
+    const mapsDirectionsUrl = place.googleMapsLink || (place.latitude && place.longitude
+        ? `https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`
+        : null);
 
     return (
-        <div className="min-h-screen bg-background pb-24">
+        <>
+            <div className="min-h-screen bg-background pb-24">
             {/* ================================================================= */}
             {/* IMMERSIVE HERO SECTION */}
             {/* ================================================================= */}
@@ -150,7 +237,7 @@ const DetailPage = () => {
                 <Link
                     to="/"
                     className="
-                        absolute top-5 left-5 z-10
+                        absolute top-20 md:top-6 left-5 z-10
                         p-3 rounded-full
                         bg-white/30 backdrop-blur-md
                         hover:bg-white/50 active:scale-95
@@ -248,13 +335,15 @@ const DetailPage = () => {
 
                         {/* Save Button */}
                         <button
-                            onClick={() => setIsSaved(!isSaved)}
+                            onClick={handleToggleSaved}
+                            disabled={isSavingFavorite}
                             className={`
                                 p-3 rounded-full
                                 shadow-sm hover:shadow-md
                                 hover:scale-105 active:scale-95
                                 transition-all duration-200
                                 ${isSaved ? 'bg-primary' : 'bg-white'}
+                                ${isSavingFavorite ? 'opacity-60 cursor-not-allowed' : ''}
                             `}
                             aria-label={isSaved ? t('detail.saved') : t('detail.save')}
                         >
@@ -335,7 +424,7 @@ const DetailPage = () => {
                 {/* ============================================================= */}
                 {/* MAP SECTION */}
                 {/* ============================================================= */}
-                {place.latitude && place.longitude && (
+                {(place.latitude && place.longitude) && (
                     <section>
                         <h2 className="font-tenor text-xl md:text-2xl text-gray-900 mb-4">
                             {t('detail.location')}
@@ -353,6 +442,20 @@ const DetailPage = () => {
                                 className="w-full h-72 md:h-80"
                             />
                         </div>
+                    </section>
+                )}
+
+                {place.googleMapsLink && (
+                    <section>
+                        <a
+                            href={place.googleMapsLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-800 text-white hover:bg-slate-700 transition-colors"
+                        >
+                            <MapPin className="w-4 h-4" />
+                            Open Google Maps Link
+                        </a>
                     </section>
                 )}
 
@@ -402,11 +505,11 @@ const DetailPage = () => {
             {/* ================================================================= */}
             {/* FIXED BOTTOM BUTTON */}
             {/* ================================================================= */}
-            {place.latitude && place.longitude && (
+            {mapsDirectionsUrl && (
                 <div className="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
                     <div className="max-w-4xl mx-auto">
                         <a
-                            href={`https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}`}
+                            href={mapsDirectionsUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="
@@ -425,7 +528,11 @@ const DetailPage = () => {
                     </div>
                 </div>
             )}
-        </div>
+
+            </div>
+
+            <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
+        </>
     );
 };
 

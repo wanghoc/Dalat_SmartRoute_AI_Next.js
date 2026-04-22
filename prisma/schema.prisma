@@ -13,6 +13,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum UserRole {
+  ADMIN
+  VISITOR
+}
+
 // =============================================================================
 // User Model
 // =============================================================================
@@ -23,6 +28,7 @@ model User {
   username     String     @unique
   passwordHash String
   avatar       String?
+  role         UserRole   @default(VISITOR)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   reviews      Review[]
@@ -52,7 +58,8 @@ model Place {
   locationVi    String?
   description   String
   descriptionVi String?
-  imagePath     String     // Local path: /images/place-name.jpg
+  imagePath     String     // Image URL or path
+  googleMapsLink String?
   rating        Float      @default(0)
   reviewCount   Int        @default(0)
   categoryId    Int

@@ -15,7 +15,8 @@
     "db:provision": "node scripts/db-provision.mjs",
     "db:provision:soft": "node scripts/db-provision.mjs --soft",
     "db:seed": "dotenv -e .env.local -- node prisma/seed.js",
-    "db:setup": "npm run db:provision && npm run db:seed"
+    "db:setup": "npm run db:provision && npm run db:seed",
+    "admin:reset": "dotenv -e .env.local -- node scripts/admin-reset.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

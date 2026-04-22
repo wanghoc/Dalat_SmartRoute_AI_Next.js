@@ -21,8 +21,21 @@ export async function GET(request: NextRequest) {
     const limit = Number.parseInt(searchParams.get('limit') ?? '50', 10);
     const offset = Number.parseInt(searchParams.get('offset') ?? '0', 10);
     const language = searchParams.get('language');
+    const userIdRaw = searchParams.get('userId');
+    const userId = Number.parseInt(String(userIdRaw ?? ''), 10);
 
-    const where = language ? { language } : {};
+    const where: {
+      language?: string;
+      userId?: number;
+    } = {};
+
+    if (language) {
+      where.language = language;
+    }
+
+    if (Number.isFinite(userId)) {
+      where.userId = userId;
+    }
 
     const reviews = await prisma.review.findMany({
       where,

@@ -20,18 +20,64 @@ export const AuthProvider = ({ children }) => {
 
     // Load user from localStorage on mount
     useEffect(() => {
-        const storedUser = localStorage.getItem('dalat_user');
-        const storedToken = localStorage.getItem('dalat_token');
-        if (storedUser && storedToken) {
+        let cancelled = false;
+
+        const bootstrapAuth = async () => {
+            const storedUser = localStorage.getItem('dalat_user');
+            const storedToken = localStorage.getItem('dalat_token');
+
+            if (!storedToken) {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
+                return;
+            }
+
+            if (storedUser) {
+                try {
+                    setUser(JSON.parse(storedUser));
+                } catch {
+                    localStorage.removeItem('dalat_user');
+                }
+            }
+
+            setToken(storedToken);
+
             try {
-                setUser(JSON.parse(storedUser));
-                setToken(storedToken);
-            } catch (e) {
+                const response = await fetch(`${API_BASE}/auth/me`, {
+                    headers: {
+                        Authorization: `Bearer ${storedToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Session expired');
+                }
+
+                const freshUser = await response.json();
+                if (cancelled) return;
+
+                setUser(freshUser);
+                localStorage.setItem('dalat_user', JSON.stringify(freshUser));
+                localStorage.setItem('dalat_token', storedToken);
+            } catch {
+                if (cancelled) return;
+                setUser(null);
+                setToken(null);
                 localStorage.removeItem('dalat_user');
                 localStorage.removeItem('dalat_token');
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
             }
-        }
-        setIsLoading(false);
+        };
+
+        bootstrapAuth();
+
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     // Register function - creates new account
@@ -84,6 +130,16 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('dalat_token');
     };
 
+    const updateUser = (patch) => {
+        if (!patch) return;
+        setUser((prev) => {
+            if (!prev) return prev;
+            const next = { ...prev, ...patch };
+            localStorage.setItem('dalat_user', JSON.stringify(next));
+            return next;
+        });
+    };
+
     const value = {
         user,
         token,
@@ -91,7 +147,8 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!user,
         login,
         register,
-        logout
+        logout,
+        updateUser
     };
 
     return (

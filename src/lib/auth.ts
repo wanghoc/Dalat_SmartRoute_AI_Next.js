@@ -3,8 +3,11 @@ import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 
 import { jsonError } from '@/lib/http';
 
+export type AppUserRole = 'ADMIN' | 'VISITOR';
+
 type TokenPayload = {
   userId: number;
+  role?: AppUserRole;
   iat?: number;
   exp?: number;
 };
@@ -12,6 +15,7 @@ type TokenPayload = {
 type AuthResult =
   | {
       userId: number;
+      role: AppUserRole;
     }
   | {
       response: Response;
@@ -38,7 +42,7 @@ export function verifyToken(token: string): TokenPayload {
   return jwt.verify(token, getJwtSecret()) as TokenPayload;
 }
 
-export function signToken(payload: { userId: number }) {
+export function signToken(payload: { userId: number; role: AppUserRole }) {
   return jwt.sign(payload, getJwtSecret(), { expiresIn: '7d' });
 }
 
@@ -50,7 +54,10 @@ export function requireUserId(request: Request): AuthResult {
 
   try {
     const decoded = verifyToken(token);
-    return { userId: decoded.userId };
+    return {
+      userId: decoded.userId,
+      role: decoded.role ?? 'VISITOR',
+    };
   } catch (error) {
     if (error instanceof TokenExpiredError || error instanceof JsonWebTokenError) {
       return { response: jsonError(401, 'Invalid token') };
@@ -58,4 +65,17 @@ export function requireUserId(request: Request): AuthResult {
 
     return { response: jsonError(401, 'Authentication failed') };
   }
+}
+
+export function requireAdmin(request: Request): AuthResult {
+  const auth = requireUserId(request);
+  if ('response' in auth) {
+    return auth;
+  }
+
+  if (auth.role !== 'ADMIN') {
+    return { response: jsonError(403, 'Admin access required') };
+  }
+
+  return auth;
 }

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Sparkles, Map, Heart, ChevronRight } from 'lucide-react';
+import { Sparkles, Map, Heart, ChevronRight, ChevronLeft } from 'lucide-react';
 import PlaceCard from '../components/PlaceCard';
 import WeatherColumn from '../components/WeatherColumn';
 
@@ -18,7 +18,7 @@ const HeroSection = () => {
             aria-labelledby="hero-title"
         >
             {/* Full-Width Background Image */}
-            <div className="relative w-full h-[84svh] md:h-[90svh] lg:h-[94svh] min-h-[560px] max-h-[980px] overflow-hidden">
+            <div className="relative w-full h-[90svh] md:h-[90svh] lg:h-[94svh] min-h-[620px] max-h-[980px] overflow-hidden">
                 <img
                     src="https://antimatter.vn/wp-content/uploads/2022/06/hinh-anh-da-lat.jpg"
                     alt="Dalat, Vietnam"
@@ -40,7 +40,7 @@ const HeroSection = () => {
                 <div className="absolute inset-0 flex items-center">
                     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         {/* Split Layout: Text Left | Weather Right */}
-                        <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 lg:gap-16 pt-20 md:pt-0">
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 lg:gap-16 pt-32 md:pt-0">
 
                             {/* LEFT SIDE: The Slogan (Majestic & Clean) */}
                             <div className="flex-1 max-w-2xl order-2 md:order-1">
@@ -99,6 +99,16 @@ const HeroSection = () => {
 
 const CuratedSection = ({ title, subtitle, places, viewAllLink }) => {
     const { t } = useTranslation();
+    const scrollerRef = useRef(null);
+
+    const scrollByCards = (direction) => {
+        const el = scrollerRef.current;
+        if (!el) return;
+        const amount = Math.max(280, Math.floor(el.clientWidth * 0.8));
+        el.scrollBy({ left: direction * amount, behavior: 'smooth' });
+    };
+
+    const canScroll = useMemo(() => Array.isArray(places) && places.length > 0, [places]);
 
     return (
         <section
@@ -132,18 +142,60 @@ const CuratedSection = ({ title, subtitle, places, viewAllLink }) => {
                 </div>
             </div>
 
-            {/* Horizontal Scroll Container - No See More Card */}
-            <div
-                className="
-          flex gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory
-          scrollbar-hide px-4 sm:px-6 lg:px-8 pb-2
-        "
-                role="region"
-                aria-label="Scroll through recommended places"
-            >
-                {places.map((place) => (
-                    <PlaceCard key={place.id} place={place} />
-                ))}
+            <div className="relative">
+                {/* Desktop arrows (for PC: no drag needed) */}
+                {canScroll && (
+                    <>
+                        <button
+                            type="button"
+                            onClick={() => scrollByCards(-1)}
+                            className="
+                                hidden md:flex items-center justify-center
+                                absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 z-10
+                                w-11 h-11 rounded-full
+                                bg-white/15 hover:bg-white/25 backdrop-blur-md
+                                border border-white/20
+                                text-white shadow-lg
+                                transition-all
+                            "
+                            aria-label="Scroll left"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => scrollByCards(1)}
+                            className="
+                                hidden md:flex items-center justify-center
+                                absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 z-10
+                                w-11 h-11 rounded-full
+                                bg-white/15 hover:bg-white/25 backdrop-blur-md
+                                border border-white/20
+                                text-white shadow-lg
+                                transition-all
+                            "
+                            aria-label="Scroll right"
+                        >
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
+                    </>
+                )}
+
+                {/* Horizontal Scroll Container - No See More Card */}
+                <div
+                    ref={scrollerRef}
+                    className="
+                        flex gap-4 md:gap-6 overflow-x-auto snap-x snap-mandatory
+                        scrollbar-hide px-4 sm:px-6 lg:px-8 pb-2
+                        scroll-smooth
+                    "
+                    role="region"
+                    aria-label="Scroll through recommended places"
+                >
+                    {places.map((place) => (
+                        <PlaceCard key={place.id} place={place} />
+                    ))}
+                </div>
             </div>
         </section>
     );
