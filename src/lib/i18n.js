@@ -127,7 +127,9 @@ const resources = {
                 title: 'Dalat AI Guide',
                 greeting: 'Hello! I\'m your Dalat travel assistant. What would you like to explore today? 🌸',
                 placeholder: 'Ask about Dalat...',
+                loginPlaceholder: 'Login required to use AI chat...',
                 thinking: 'Thinking...',
+                loginRequired: 'Please login first to use the AI assistant.',
                 errorProcess: 'Sorry, I encountered an issue processing your question. Please try again!',
                 errorConnection: 'Unable to connect to server. Please check your connection!'
             },
@@ -306,7 +308,9 @@ const resources = {
                 title: 'Trợ lý AI Đà Lạt',
                 greeting: 'Xin chào! Tôi là trợ lý du lịch Đà Lạt. Bạn muốn khám phá điều gì hôm nay? 🌸',
                 placeholder: 'Hỏi về Đà Lạt...',
+                loginPlaceholder: 'Cần đăng nhập để dùng chatbot AI...',
                 thinking: 'Đang suy nghĩ...',
+                loginRequired: 'Bạn cần đăng nhập trước khi sử dụng chatbot AI.',
                 errorProcess: 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi. Vui lòng thử lại!',
                 errorConnection: 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối!'
             },

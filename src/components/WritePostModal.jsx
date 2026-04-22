@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import StarRating from './StarRating';
 
@@ -7,11 +7,18 @@ import StarRating from './StarRating';
 // WritePostModal - Antigravity Glass Modal for Writing Reviews
 // =============================================================================
 
-const WritePostModal = ({ isOpen, onClose, onSubmit, user }) => {
+const WritePostModal = ({ isOpen, onClose, onSubmit, user, places = [] }) => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [rating, setRating] = useState(5); // 1-5 stars
+    const [placeId, setPlaceId] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && places.length > 0 && !placeId) {
+            setPlaceId(String(places[0].id));
+        }
+    }, [isOpen, places, placeId]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -26,32 +33,32 @@ const WritePostModal = ({ isOpen, onClose, onSubmit, user }) => {
             return;
         }
 
+        if (!placeId) {
+            alert('Please choose a destination/place.');
+            return;
+        }
+
         setIsSubmitting(true);
 
-        const newReview = {
-            id: Date.now(),
-            title: title.trim(),
-            content: content.trim(),
-            rating, // Now 1-5 stars
-            author: user?.name || user?.username || 'Anonymous',
-            authorAvatar: user?.avatar || null,
-            date: new Date().toISOString(),
-            language: 'en',
-            tags: ['User Review'],
-            isCustom: true
-        };
+        try {
+            const ok = await onSubmit({
+                title: title.trim(),
+                content: content.trim(),
+                rating,
+                placeId: Number.parseInt(placeId, 10)
+            });
 
-        // Simulate a brief delay for UX
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        onSubmit(newReview);
-
-        // Reset form
-        setTitle('');
-        setContent('');
-        setRating(5);
-        setIsSubmitting(false);
-        onClose();
+            if (ok) {
+                // Reset form
+                setTitle('');
+                setContent('');
+                setRating(5);
+                setPlaceId(places.length > 0 ? String(places[0].id) : '');
+                onClose();
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleBackdropClick = (e) => {
@@ -130,6 +137,24 @@ const WritePostModal = ({ isOpen, onClose, onSubmit, user }) => {
 
                             {/* Star Rating Selector */}
                             <div>
+                                <label className="block text-sm font-medium text-white/60 mb-2">
+                                    Destination
+                                </label>
+                                <select
+                                    value={placeId}
+                                    onChange={(e) => setPlaceId(e.target.value)}
+                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 transition-colors"
+                                >
+                                    {places.map((place) => (
+                                        <option key={place.id} value={place.id} className="bg-slate-900 text-white">
+                                            {place.titleVi || place.title}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Star Rating Selector */}
+                            <div>
                                 <label className="block text-sm font-medium text-white/60 mb-3">
                                     Your Rating
                                 </label>
@@ -148,11 +173,11 @@ const WritePostModal = ({ isOpen, onClose, onSubmit, user }) => {
                             {/* Submit Button */}
                             <button
                                 type="submit"
-                                disabled={isSubmitting || !title.trim() || !content.trim()}
+                                disabled={isSubmitting || !title.trim() || !content.trim() || !placeId}
                                 className={`
                                     w-full py-3.5 rounded-xl font-medium
                                     transition-all duration-200
-                                    ${isSubmitting || !title.trim() || !content.trim()
+                                    ${isSubmitting || !title.trim() || !content.trim() || !placeId
                                         ? 'bg-white/10 text-white/30 cursor-not-allowed'
                                         : 'bg-slate-800 hover:bg-slate-700 text-white active:scale-[0.98]'
                                     }

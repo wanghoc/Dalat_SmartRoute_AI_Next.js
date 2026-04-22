@@ -49,13 +49,13 @@ function maybeExitSoft(message, context = '') {
     return false;
   }
 
-  if (!context || isFallbackEligible(context)) {
-    console.warn(`[db-provision] ${message}`);
-    console.warn('[db-provision] Soft mode enabled. Continuing build without blocking deployment.');
-    process.exit(0);
+  const shouldContinue = !context || isFallbackEligible(context);
+  console.warn(`[db-provision] ${message}`);
+  if (!shouldContinue && context) {
+    console.warn('[db-provision] Soft mode fallback triggered for a non-standard error context.');
   }
-
-  return false;
+  console.warn('[db-provision] Soft mode enabled. Continuing build without blocking deployment.');
+  process.exit(0);
 }
 
 function run(command, args, label, timeoutMs = 0, env = process.env) {
@@ -101,19 +101,28 @@ function getHost(connectionString) {
   }
 }
 
-process.env.DATABASE_URL = normalizeConnectionString(process.env.DATABASE_URL);
-process.env.DIRECT_URL = normalizeConnectionString(process.env.DIRECT_URL);
+const supabaseDatabaseUrl = normalizeConnectionString(
+  process.env.SUPABASE_DATABASE_URL,
+);
+const supabaseDirectUrl = normalizeConnectionString(process.env.SUPABASE_DIRECT_URL);
+
+process.env.DATABASE_URL = normalizeConnectionString(
+  process.env.DATABASE_URL ?? supabaseDatabaseUrl,
+);
+process.env.DIRECT_URL = normalizeConnectionString(
+  process.env.DIRECT_URL ?? supabaseDirectUrl,
+);
 
 if (!process.env.DATABASE_URL) {
   console.error('[db-provision] DATABASE_URL is missing.');
-  console.error('[db-provision] Set DATABASE_URL in Vercel Project Settings -> Environment Variables.');
+  console.error('[db-provision] Set SUPABASE_DATABASE_URL (or DATABASE_URL) in Vercel Project Settings.');
   process.exit(1);
 }
 
 if (isLikelySqliteUrl(process.env.DATABASE_URL)) {
   console.error('[db-provision] DATABASE_URL is using SQLite/file protocol, but schema expects PostgreSQL.');
   console.error('[db-provision] Current DATABASE_URL starts with file:/sqlite:.');
-  console.error('[db-provision] Update Vercel DATABASE_URL to your Supabase Postgres URI (pooler on port 6543).');
+  console.error('[db-provision] Update Vercel SUPABASE_DATABASE_URL (or DATABASE_URL) to Supabase Postgres pooler URI (port 6543).');
   process.exit(1);
 }
 
@@ -125,6 +134,17 @@ if (!hasSupportedPostgresProtocol(process.env.DATABASE_URL)) {
 if (!process.env.DIRECT_URL) {
   process.env.DIRECT_URL = process.env.DATABASE_URL;
   console.warn('[db-provision] DIRECT_URL is missing. Defaulting DIRECT_URL to DATABASE_URL.');
+}
+
+if (
+  process.env.VERCEL === '1' &&
+  typeof process.env.DIRECT_URL === 'string' &&
+  process.env.DIRECT_URL.includes('.supabase.co:5432')
+) {
+  console.warn(
+    '[db-provision] Vercel build detected with Supabase direct host (5432). Using pooled URL for DIRECT_URL to reduce P1001 failures.',
+  );
+  process.env.DIRECT_URL = process.env.DATABASE_URL;
 }
 
 if (isLikelySqliteUrl(process.env.DIRECT_URL)) {

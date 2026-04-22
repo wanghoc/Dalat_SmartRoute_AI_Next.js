@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../context/AuthContext';
 import { API_BASE } from '../utils/api';
 
 // =============================================================================
@@ -12,6 +13,7 @@ import { API_BASE } from '../utils/api';
 
 const ChatWidget = () => {
     const { t, i18n } = useTranslation();
+    const { isAuthenticated, token } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState('');
@@ -26,7 +28,7 @@ const ChatWidget = () => {
             type: 'ai',
             text: t('chat.greeting')
         }]);
-    }, []);
+    }, [t]);
 
     // Update greeting when language changes
     useEffect(() => {
@@ -51,6 +53,16 @@ const ChatWidget = () => {
     const handleSend = async () => {
         if (!inputValue.trim() || isLoading) return;
 
+        if (!isAuthenticated || !token) {
+            const blockedMessage = {
+                id: Date.now() + 1,
+                type: 'ai',
+                text: t('chat.loginRequired')
+            };
+            setMessages(prev => [...prev, blockedMessage]);
+            return;
+        }
+
         const userMessage = {
             id: Date.now(),
             type: 'user',
@@ -66,7 +78,8 @@ const ChatWidget = () => {
             const response = await fetch(`${API_BASE}/chat`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     message: userMessage.text,
@@ -84,6 +97,13 @@ const ChatWidget = () => {
                     text: data.response
                 };
                 setMessages(prev => [...prev, aiMessage]);
+            } else if (response.status === 401) {
+                const unauthMessage = {
+                    id: Date.now() + 1,
+                    type: 'ai',
+                    text: t('chat.loginRequired')
+                };
+                setMessages(prev => [...prev, unauthMessage]);
             } else {
                 // Error response
                 const errorMessage = {
@@ -187,6 +207,12 @@ const ChatWidget = () => {
 
                 {/* Messages Body */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/50">
+                    {!isAuthenticated && (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                            {t('chat.loginRequired')}
+                        </div>
+                    )}
+
                     {messages.map((message) => (
                         <div
                             key={message.id}
@@ -236,7 +262,7 @@ const ChatWidget = () => {
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={handleKeyPress}
-                            placeholder={t('chat.placeholder')}
+                            placeholder={isAuthenticated ? t('chat.placeholder') : t('chat.loginPlaceholder')}
                             disabled={isLoading}
                             className="
                                 flex-1 px-4 py-2.5

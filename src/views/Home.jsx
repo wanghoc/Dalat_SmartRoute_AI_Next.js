@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { Sparkles, Map, Heart, ChevronRight } from 'lucide-react';
 import PlaceCard from '../components/PlaceCard';
 import WeatherColumn from '../components/WeatherColumn';
-import HeroSearchBar from '../components/HeroSearchBar';
 
 // =============================================================================
 // COMPONENT: HeroSection (Cinematic Split-Layout: Text Left, Weather Right)
@@ -19,7 +18,7 @@ const HeroSection = () => {
             aria-labelledby="hero-title"
         >
             {/* Full-Width Background Image */}
-            <div className="relative w-full h-[58vh] sm:h-[64vh] md:h-[72vh] lg:h-[78vh] min-h-[420px] max-h-[760px] overflow-hidden">
+            <div className="relative w-full h-[84svh] md:h-[90svh] lg:h-[94svh] min-h-[560px] max-h-[980px] overflow-hidden">
                 <img
                     src="https://antimatter.vn/wp-content/uploads/2022/06/hinh-anh-da-lat.jpg"
                     alt="Dalat, Vietnam"

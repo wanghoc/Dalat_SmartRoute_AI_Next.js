@@ -18,13 +18,13 @@ import { reviewsPart1, reviewsPart2 } from '../data/mockReviews';
 import { useAuth } from '../context/AuthContext';
 import LoginModal from '../components/LoginModal';
 import WritePostModal from '../components/WritePostModal';
+import { API_BASE } from '../utils/api';
 
 // =============================================================================
 // Constants
 // =============================================================================
 
 const ITEMS_PER_PAGE = 12; // Adjusted for grid layout
-const CUSTOM_REVIEWS_KEY = 'dalat_custom_reviews';
 
 const staticReviews = [...reviewsPart1, ...reviewsPart2];
 
@@ -54,6 +54,31 @@ const formatDate = (dateString) => {
         year: 'numeric'
     });
 };
+
+const parseTags = (rawTags) => {
+    if (!rawTags) return [];
+    if (Array.isArray(rawTags)) return rawTags;
+    try {
+        const parsed = JSON.parse(rawTags);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+};
+
+const mapDbReviewToUi = (review) => ({
+    id: review.id,
+    title: review.title,
+    content: review.content,
+    rating: review.rating,
+    author: review.user?.username || 'Anonymous',
+    authorAvatar: review.user?.avatar || null,
+    date: review.createdAt,
+    language: review.language || 'en',
+    tags: parseTags(review.tags),
+    helpful: review.helpful || 0,
+    isCustom: true
+});
 
 // =============================================================================
 // Components
@@ -262,23 +287,47 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 // =============================================================================
 
 const Community = () => {
-    const { user, isAuthenticated } = useAuth();
+    const { user, token, isAuthenticated } = useAuth();
     const [currentPage, setCurrentPage] = useState(1);
     const [activeFilter, setActiveFilter] = useState(FILTERS.ALL);
     const [customReviews, setCustomReviews] = useState([]);
+    const [places, setPlaces] = useState([]);
     const [loginModalOpen, setLoginModalOpen] = useState(false);
     const [writeModalOpen, setWriteModalOpen] = useState(false);
 
-    // Load custom reviews
+    // Load persisted reviews from database
     useEffect(() => {
-        try {
-            const stored = localStorage.getItem(CUSTOM_REVIEWS_KEY);
-            if (stored) {
-                setCustomReviews(JSON.parse(stored));
+        const fetchReviews = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/reviews?limit=200`);
+                if (!response.ok) {
+                    return;
+                }
+                const data = await response.json();
+                const mapped = (data.reviews || []).map(mapDbReviewToUi);
+                setCustomReviews(mapped);
+            } catch (e) {
+                console.error('Failed to load reviews from DB:', e);
             }
-        } catch (e) {
-            console.error('Failed to load custom reviews:', e);
-        }
+        };
+
+        fetchReviews();
+    }, []);
+
+    // Load places for review posting
+    useEffect(() => {
+        const fetchPlaces = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/places?limit=100`);
+                if (!response.ok) return;
+                const data = await response.json();
+                setPlaces(Array.isArray(data) ? data : []);
+            } catch (e) {
+                console.error('Failed to load places for reviews:', e);
+            }
+        };
+
+        fetchPlaces();
     }, []);
 
     // Merge reviews
@@ -318,12 +367,43 @@ const Community = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleNewReview = (newReview) => {
-        const updatedReviews = [newReview, ...customReviews];
-        setCustomReviews(updatedReviews);
-        localStorage.setItem(CUSTOM_REVIEWS_KEY, JSON.stringify(updatedReviews));
-        setCurrentPage(1);
-        setActiveFilter(FILTERS.ALL);
+    const handleNewReview = async (newReview) => {
+        if (!token) {
+            setLoginModalOpen(true);
+            return false;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE}/reviews`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    title: newReview.title,
+                    content: newReview.content,
+                    rating: newReview.rating,
+                    placeId: newReview.placeId,
+                    language: 'vi',
+                    tags: ['Community']
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to post review');
+            }
+
+            const created = mapDbReviewToUi(data);
+            setCustomReviews(prev => [created, ...prev]);
+            setCurrentPage(1);
+            setActiveFilter(FILTERS.ALL);
+            return true;
+        } catch (e) {
+            alert(e.message || 'Failed to post review');
+            return false;
+        }
     };
 
     const handleWriteClick = () => {
@@ -445,6 +525,7 @@ const Community = () => {
                 onClose={() => setWriteModalOpen(false)}
                 onSubmit={handleNewReview}
                 user={user}
+                places={places}
             />
         </>
     );
