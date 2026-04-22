@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Sparkles, X, Send, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkBreaks from 'remark-breaks';
+import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
 import { API_BASE } from '../utils/api';
 
@@ -110,6 +113,36 @@ const ChatWidget = () => {
         }
     };
 
+    const renderAiMessage = (text) => (
+        <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkBreaks]}
+            components={{
+                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                ul: ({ children }) => <ul className="list-disc pl-5 mb-2 space-y-1">{children}</ul>,
+                ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 space-y-1">{children}</ol>,
+                li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                a: ({ children, href }) => (
+                    <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline text-blue-600 hover:text-blue-700"
+                    >
+                        {children}
+                    </a>
+                ),
+                code: ({ children }) => (
+                    <code className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-[0.85em]">
+                        {children}
+                    </code>
+                )
+            }}
+        >
+            {text}
+        </ReactMarkdown>
+    );
+
     return (
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40">
             {/* Chat Window */}
@@ -165,14 +198,17 @@ const ChatWidget = () => {
                             <div
                                 className={`
                                     max-w-[85%] px-4 py-2.5 rounded-2xl
-                                    font-manrope text-sm leading-relaxed
+                                    font-manrope text-sm leading-relaxed break-words
                                     ${message.type === 'user'
                                         ? 'bg-blue-600 text-white rounded-br-md'
                                         : 'bg-white text-gray-800 shadow-sm border border-gray-100 rounded-bl-md'
                                     }
                                 `}
                             >
-                                {message.text}
+                                {message.type === 'ai'
+                                    ? renderAiMessage(message.text)
+                                    : <span className="whitespace-pre-wrap">{message.text}</span>
+                                }
                             </div>
                         </div>
                     ))}

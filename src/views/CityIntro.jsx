@@ -52,12 +52,13 @@ const CityIntro = () => {
             {/* ============================================================= */}
             {/* HERO - Full Bleed Image */}
             {/* ============================================================= */}
-            <section className="relative h-screen min-h-[800px]">
+            <section className="relative h-[68vh] md:h-[76vh] lg:h-[82vh] min-h-[460px] max-h-[880px] overflow-hidden">
                 <div className="absolute inset-0">
                     <img
                         src="https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=2000&auto=format&fit=crop"
                         alt="Misty pine forest in the highlands"
                         className="w-full h-full object-cover"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
                     />
                     {/* Cool Blue Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-blue-950/50 to-slate-950" />

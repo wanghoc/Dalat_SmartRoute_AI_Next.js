@@ -35,12 +35,14 @@ const PlaceCard = ({ place }) => {
                     alt={title}
                     loading="lazy"
                     onLoad={() => setImageLoaded(true)}
+                    onError={() => setImageLoaded(true)}
                     className={`
                         absolute inset-0 w-full h-full object-cover
                         transition-all duration-500 ease-out
                         ${imageLoaded ? 'opacity-100' : 'opacity-0'}
                         group-hover:scale-105 group-active:scale-105
                     `}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
                 />
 
                 {/* Gradient Overlay */}

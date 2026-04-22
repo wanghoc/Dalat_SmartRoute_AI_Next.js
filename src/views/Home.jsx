@@ -15,15 +15,16 @@ const HeroSection = () => {
 
     return (
         <section
-            className="relative w-full"
+            className="relative w-full overflow-hidden"
             aria-labelledby="hero-title"
         >
             {/* Full-Width Background Image */}
-            <div className="relative w-full h-[85vh] md:h-[90vh] lg:h-[95vh] min-h-[600px]">
+            <div className="relative w-full h-[58vh] sm:h-[64vh] md:h-[72vh] lg:h-[78vh] min-h-[420px] max-h-[760px] overflow-hidden">
                 <img
                     src="https://antimatter.vn/wp-content/uploads/2022/06/hinh-anh-da-lat.jpg"
                     alt="Dalat, Vietnam"
                     className="absolute inset-0 w-full h-full object-cover"
+                    style={{ objectFit: 'cover', objectPosition: 'center' }}
                 />
 
                 {/* Strong Dark Overlay for maximum text readability */}
@@ -235,6 +236,7 @@ const LocalEatsSection = () => {
                                 src={item.imagePath}
                                 alt={isVietnamese && item.titleVi ? item.titleVi : item.title}
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
                             />
                             {/* Gradient Overlay */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />

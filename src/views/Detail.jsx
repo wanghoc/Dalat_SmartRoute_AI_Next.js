@@ -123,7 +123,7 @@ const DetailPage = () => {
             {/* ================================================================= */}
             {/* IMMERSIVE HERO SECTION */}
             {/* ================================================================= */}
-            <section className="relative w-full h-[50vh] md:h-[60vh]">
+            <section className="relative w-full h-[48vh] md:h-[58vh] min-h-[320px] max-h-[680px] overflow-hidden">
                 {/* Skeleton loader */}
                 {!imageLoaded && (
                     <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-primary/20 animate-pulse" />
@@ -134,11 +134,13 @@ const DetailPage = () => {
                     src={place.imagePath}
                     alt={title}
                     onLoad={() => setImageLoaded(true)}
+                    onError={() => setImageLoaded(true)}
                     className={`
                         absolute inset-0 w-full h-full object-cover
                         transition-opacity duration-500
                         ${imageLoaded ? 'opacity-100' : 'opacity-0'}
                     `}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
                 />
 
                 {/* Gradient Overlay */}

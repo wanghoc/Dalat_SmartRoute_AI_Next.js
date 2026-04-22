@@ -446,6 +446,7 @@ const RecommendationCard = ({ place, isVietnamese }) => {
                         w-full h-full object-cover
                         group-hover:scale-105 transition-transform duration-500
                     "
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 

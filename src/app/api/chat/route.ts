@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
 
     const langInstructions =
       language === 'vi'
-        ? 'Tra loi ngan gon bang tieng Viet:'
-        : 'Answer briefly in English:';
+        ? 'Tra loi ngan gon bang tieng Viet, dung Markdown de dinh dang de doc, xuong dong giua cac y, va in dam cac dia diem quan trong:'
+        : 'Answer briefly in English using Markdown formatting, break ideas into separate lines, and bold key place names:';
 
     const roleDescription =
       language === 'vi'
