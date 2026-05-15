@@ -163,8 +163,8 @@ const CityIntro = () => {
                         >
                             <div className="aspect-[4/5] overflow-hidden">
                                 <img
-                                    src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=1000&fit=crop"
-                                    alt="Lang Biang mountain range"
+                                    src="https://daingantaynguyen.vn//upload/ckfinder/images/doi-robin-du-lich-da-lat-4.jpg"
+                                    alt="Lam Vien mountain range"
                                     className="w-full h-full object-cover"
                                 />
                             </div>
@@ -271,7 +271,7 @@ const CityIntro = () => {
                         >
                             <div className="aspect-[4/5] overflow-hidden">
                                 <img
-                                    src="https://images.unsplash.com/photo-1555921015-5532091f6026?w=800&h=1000&fit=crop"
+                                    src="https://cdn.tcdulichtphcm.vn/upload/2-2024/images/2024-04-01/1711947249-m---t-g--c-ana-mandara-bu---i-s--ng---ngu---n--ana-mandara.jpeg-1711946698-160-width1471height1102.jpg"
                                     alt="French colonial villa in Dalat"
                                     className="w-full h-full object-cover"
                                 />
